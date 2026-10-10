@@ -1,0 +1,174 @@
+
+        /* =========================================
+           1. RESET BÁSICO E CORES (TEMA LIGHT)
+        ========================================= */
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #2c3e50;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container-principal {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .escondido {
+            display: none !important;
+        }
+
+        /* =========================================
+           2. PAINEL DE FOCO (ESTUDOS)
+        ========================================= */
+        .cabecalho {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .cabecalho h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            letter-spacing: 2px;
+            color: #1a252f;
+        }
+
+        .cabecalho p {
+            margin: 5px 0 0;
+            color: #7f8c8d;
+        }
+
+        .card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .card-cronometro {
+            text-align: center;
+        }
+
+        .visor-digital {
+            font-size: 4.5rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin: 20px 0;
+            color: #2c3e50;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .input-materia {
+            width: 80%;
+            max-width: 400px;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #dcdde1;
+            border-radius: 6px;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-materia:focus {
+            border-color: #3498db;
+        }
+
+        .controles {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-primario { background-color: #3498db; color: white; }
+        .btn-secundario { background-color: #95a5a6; color: white; }
+        .btn-concluir { background-color: #27ae60; color: white; }
+
+        .grade-dados {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .grade-dados {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .lista-dados {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .lista-dados li {
+            padding: 12px 0;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 0.95rem;
+        }
+        
+        .lista-dados li:last-child {
+            border-bottom: none;
+        }
+
+        /* =========================================
+           3. PAINEL DE DESCANSO (RELÓGIO SVG)
+        ========================================= */
+        .relogio-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .visor-dentro-do-anel {
+            position: absolute;
+            margin: 0;
+            font-size: 2rem;
+            color: #2c3e50;
+            font-variant-numeric: tabular-nums;
+            z-index: 10;
+        }
+
+        .anel-progresso {
+            transform: rotate(-90deg);
+        }
+
+        .anel-fundo {
+            fill: none;
+            stroke: #e6e6e6;
+            stroke-width: 8;
+        }
+
+        .anel-animado {
+            fill: none;
+            stroke: #3498db;
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-dasharray: 565;
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 0.1s linear;
+        }
