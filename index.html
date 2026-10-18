@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORFEU - Foco e Recuperação</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+
+        <div class="header">
+            <h1>ORFEU</h1>
+            <p>Gerenciador de Foco e Recuperação</p>
+        </div>
+
+        <!-- PAINEL DE FOCO -->
+        <div id="painel-foco" class="card">
+            <h1 id="visor">00:00:00:00</h1>
+            <input type="text" id="materia" class="input-materia" placeholder="Digite ou clique em uma matéria abaixo...">
+            <div id="botoes-materias" class="area-botoes-acao" style="margin-bottom: 30px; flex-wrap: wrap;"></div>
+            <div class="area-botoes-acao">
+                <button id="btn-iniciar" class="btn-acao btn-iniciar">▶ Iniciar Foco</button>
+                <button id="btn-pausar" class="btn-acao btn-pausar">⏸ Pausar</button>
+                <button id="btn-concluir" class="btn-acao btn-concluir">✓ Concluir Sessão</button>
+            </div>
+        </div>
+
+        <!-- PAINEL DE DESCANSO -->
+        <div id="painel-descanso" class="card escondido" style="text-align: center; background-color: #2c3e50; color: white;">
+            <h2 style="color: #34db8a;">⏳ Tempo de Recuperação</h2>
+            <p style="color: #bdc3c7; margin-top: -10px;">Descanse. Seu cérebro está consolidando o que aprendeu.</p>
+            <h1 id="visor-descanso" style="font-size: 5rem; font-weight: 300; margin: 20px 0;">00:00:00</h1>
+            <button id="btnPularDescanso" class="btn-acao" style="background-color: #e74c3c; margin-top: 20px;">Pular Descanso</button>
+        </div>
+
+        <!-- RESUMO GLOBAL -->
+        <div class="card">
+            <h3 style="margin-top: 0; color: #2c3e50; margin-bottom: 20px;">Resumo Global</h3>
+            <div id="resumo-rapido" class="resumo-container"></div>
+            <div style="text-align: right; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+                <button id="btn-exportar" class="btn-acao" style="background-color: #8e44ad; font-size: 14px; padding: 10px 20px;">📥 Baixar Relatório (.txt)</button>
+            </div>
+        </div>
+
+        <!-- RENDIMENTO POR MATÉRIA -->
+        <div class="card">
+            <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #f4f7f6; padding-bottom: 15px; margin-bottom: 20px;">Rendimento por Matéria</h3>
+            <ul id="placar-mensal" class="grid-materias"></ul>
+        </div>
+
+        <!-- GRÁFICO SEMANAL -->
+        <div class="card">
+            <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #f4f7f6; padding-bottom: 15px; margin-bottom: 20px;">Radar da Semana</h3>
+            <div class="container-grafico">
+                <canvas id="grafico-semana"></canvas>
+            </div>
+        </div>
+
+        <!-- GRÁFICO MENSAL -->
+        <div class="card">
+            <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #f4f7f6; padding-bottom: 15px; margin-bottom: 20px;">Comparativo Mensal</h3>
+            <div class="container-grafico">
+                <canvas id="grafico-evolucao"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- IMPORTANTE: type="module" é obrigatório para o Firebase funcionar -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>

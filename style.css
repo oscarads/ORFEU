@@ -1,0 +1,136 @@
+/* ==========================================
+   ORFEU — style.css
+   ========================================== */
+
+/* 1. RESET E FUNDO */
+* { box-sizing: border-box; }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+/* 2. ESTRUTURA PRINCIPAL */
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* 3. CARTÕES */
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+    margin-bottom: 25px;
+}
+
+/* 4. CABEÇALHO */
+.header { text-align: center; margin-bottom: 50px; }
+.header h1 {
+    margin: 0;
+    font-size: 4.5em;
+    font-weight: 800;
+    color: #1a252f;
+    letter-spacing: 2px;
+}
+.header p {
+    margin: 5px 0 0 0;
+    color: #7f8c8d;
+    font-size: 1.3em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* 5. VISOR */
+#visor {
+    font-size: 6.5rem;
+    font-weight: 300;
+    color: #2c3e50;
+    margin: 10px 0 30px 0;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+/* 6. INPUT DE MATÉRIA */
+.input-materia {
+    width: 100%;
+    max-width: 600px;
+    padding: 16px;
+    font-size: 16px;
+    border: 2px solid #eef2f5;
+    border-radius: 8px;
+    margin: 0 auto 20px auto;
+    display: block;
+    outline: none;
+    transition: border-color 0.3s;
+}
+.input-materia:focus { border-color: #3498db; }
+
+/* 7. BOTÕES */
+.btn-acao {
+    padding: 14px 28px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    color: white;
+    font-size: 16px;
+    margin: 0 5px;
+    transition: opacity 0.2s, transform 0.1s;
+}
+.btn-acao:hover { opacity: 0.85; transform: translateY(-1px); }
+.btn-acao:active { transform: translateY(0); }
+.btn-iniciar  { background-color: #3498db; }
+.btn-pausar   { background-color: #95a5a6; }
+.btn-concluir { background-color: #2ecc71; }
+
+.area-botoes-acao {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* 8. RESUMO RÁPIDO */
+.resumo-container {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+.resumo-box {
+    padding: 20px;
+    border-radius: 8px;
+    flex: 1;
+    min-width: 200px;
+    text-align: center;
+}
+
+/* 9. GRID DE MATÉRIAS */
+.grid-materias {
+    padding-left: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+/* 10. GRÁFICOS */
+.container-grafico {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+/* 11. UTILITÁRIOS */
+.escondido { display: none !important; }
+
+/* 12. RESPONSIVO MOBILE */
+@media (max-width: 600px) {
+    #visor { font-size: 3.5rem; }
+    .header h1 { font-size: 3em; }
+    .btn-acao { padding: 12px 16px; font-size: 14px; }
+    .area-botoes-acao { flex-wrap: wrap; }
+}
