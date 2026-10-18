@@ -159,6 +159,13 @@ function carregarBotoesRapidos() {
         let btn = document.createElement("button");
         btn.textContent = nome;
         btn.style.cssText = "padding:8px 15px;cursor:pointer;border-radius:5px;border:1px solid #ccc;background-color:#f8f9fa;font-weight:bold;";
+        
+        // --- NOVIDADE: O Balão de Informações (Tooltip) ---
+        let tempoTotal = formatarHoraAmigavel(tempoPorMateria[nome] || 0);
+        let recorde = formatarHoraAmigavel(recordePorMateria[nome] || 0);
+        btn.title = `📊 Total Estudado: ${tempoTotal}\n🏆 Maior Sessão: ${recorde}`;
+        // --------------------------------------------------
+
         btn.addEventListener("click", () => { materia.value = nome; });
         btn.addEventListener("contextmenu", async (e) => {
             e.preventDefault();
