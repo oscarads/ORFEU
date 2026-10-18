@@ -1,8 +1,9 @@
 /* ==========================================================
-   0. FIREBASE — Conexão com a Nuvem
+   0. FIREBASE — Conexão com a Nuvem e Autenticação
    ========================================================== */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
 import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCmKZ___F5p-mYxoUDwCMm526E-BTZt3H0",
@@ -16,18 +17,23 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+// Variável que guarda o ID secreto do usuário logado
+let caminhoNuvem = null; 
 
 /* ==========================================================
    1. VARIÁVEIS DE ESTADO
    ========================================================== */
-let tempoInicio    = 0, tempoAcumulado = 0, milissegundos  = 0, segundos = 0, minutos = 0, horas = 0;
-let intervaloId    = null, modoAtual = "foco", ultimoAviso = 0, limiteMaximo = 52;
+let tempoInicio = 0, tempoAcumulado = 0, milissegundos = 0, segundos = 0, minutos = 0, horas = 0;
+let intervaloId = null, modoAtual = "foco", ultimoAviso = 0, limiteMaximo = 52;
 let graficoEvolucao = null, graficoSemana = null;
 
-let tempoPorMateria    = {};
-let recordePorMateria  = {};
-let metaPorMateria     = {};
-let tempoPorMes        = {};
+let tempoPorMateria = {};
+let recordePorMateria = {};
+let metaPorMateria = {};
+let tempoPorMes = {};
 let tempoPorDiaMateria = {};
 
 /* ==========================================================
@@ -35,6 +41,11 @@ let tempoPorDiaMateria = {};
    ========================================================== */
 const somAlarme = new Audio("https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg");
 somAlarme.loop = true;
+
+const telaLogin      = document.getElementById("tela-login");
+const appPrincipal   = document.getElementById("app-principal");
+const btnLogin       = document.getElementById("btn-login");
+const btnSair        = document.getElementById("btn-sair");
 
 const materia        = document.getElementById("materia");
 const visor          = document.getElementById("visor");
@@ -47,26 +58,53 @@ const btnPularDescanso = document.getElementById("btnPularDescanso");
 const painelFoco     = document.getElementById("painel-foco");
 
 /* ==========================================================
-   3. FORMATAÇÃO DE TEMPO
+   3. SISTEMA DE LOGIN (Google Auth)
+   ========================================================== */
+btnLogin.addEventListener("click", () => {
+    signInWithPopup(auth, provider).catch((error) => alert("Erro ao fazer login: " + error.message));
+});
+
+btnSair.addEventListener("click", () => {
+    if(confirm("Tem certeza que deseja sair?")) signOut(auth);
+});
+
+// Fica vigiando para ver se o usuário está logado ou não
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        // Usuário entrou! Pega o ID único dele para salvar na pasta certa.
+        caminhoNuvem = 'usuarios/' + user.uid + '/dadosOrfeu';
+        telaLogin.style.display = "none";
+        appPrincipal.style.display = "block";
+        btnSair.style.display = "block";
+        iniciarSistema(); // Puxa os dados apenas deste usuário
+    } else {
+        // Ninguém logado. Mostra a tela de bloqueio.
+        caminhoNuvem = null;
+        telaLogin.style.display = "flex";
+        appPrincipal.style.display = "none";
+        btnSair.style.display = "none";
+        
+        // Zera as memórias da tela para não vazar dados para o próximo usuário
+        tempoPorMateria = {}; recordePorMateria = {}; metaPorMateria = {}; tempoPorMes = {}; tempoPorDiaMateria = {};
+    }
+});
+
+/* ==========================================================
+   4. FORMATAÇÃO E MOTOR DO TEMPO
    ========================================================== */
 function formatarHoraAmigavel(segundosTotais) {
-    let h = Math.floor(segundosTotais / 3600);
-    let m = Math.floor((segundosTotais % 3600) / 60);
+    let h = Math.floor(segundosTotais / 3600), m = Math.floor((segundosTotais % 3600) / 60);
     if (h > 0 && m > 0) return `${h}h ${m}m`;
     if (h > 0) return `${h}h`;
     if (m === 0 && h === 0) return "0m";
     return `${m}m`;
 }
 
-/* ==========================================================
-   4. MOTOR DO TEMPO
-   ========================================================== */
 function incrementarTempo() {
     let diferencaMs = Date.now() - tempoInicio;
 
     if (modoAtual === "descanso") {
         let tempoRestante = tempoAcumulado - diferencaMs;
-
         if (tempoRestante <= 0) {
             clearInterval(intervaloId); intervaloId = null; modoAtual = "foco";
             painelFoco.classList.remove("escondido"); painelDescanso.classList.add("escondido");
@@ -75,7 +113,6 @@ function incrementarTempo() {
             somAlarme.pause(); somAlarme.currentTime = 0;
             return;
         }
-
         let totalS = Math.floor(tempoRestante / 1000);
         let h = Math.floor(totalS / 3600), m = Math.floor((totalS % 3600) / 60), s = totalS % 60;
         visorDescanso.textContent = `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
@@ -88,8 +125,7 @@ function incrementarTempo() {
     milissegundos = Math.floor((diferencaMs % 1000) / 10);
 
     let segundosTotais = Math.floor(diferencaMs / 1000);
-    let nome = materia.value.toUpperCase();
-    let metaAtual = metaPorMateria[nome] || 25;
+    let nome = materia.value.toUpperCase(), metaAtual = metaPorMateria[nome] || 25;
 
     if (segundosTotais >= metaAtual * 60 && segundosTotais - ultimoAviso >= 600) {
         somAlarme.play(); document.title = "⚠️ META ATINGIDA!";
@@ -97,42 +133,29 @@ function incrementarTempo() {
         somAlarme.pause(); somAlarme.currentTime = 0; document.title = "ORFEU"; ultimoAviso = segundosTotais;
         if (resposta) btnConcluir.click();
     }
-
     visor.textContent = `${String(horas).padStart(2,"0")}:${String(minutos).padStart(2,"0")}:${String(segundos).padStart(2,"0")}:${String(milissegundos).padStart(2,"0")}`;
 }
 
 /* ==========================================================
-   5. RENDERIZAÇÃO DA TELA (Agora usando TRAÇOS - em vez de BARRAS /)
+   5. RENDERIZAÇÃO DA TELA (Com Tooltip)
    ========================================================== */
 function atualizarResumoRapido() {
     const painel = document.getElementById("resumo-rapido");
     if (!painel) return;
 
     let hoje = new Date();
-    // CORREÇÃO FIREBASE: Uso de traço em vez de barra
     let strHoje = `${String(hoje.getDate()).padStart(2,"0")}-${String(hoje.getMonth()+1).padStart(2,"0")}-${hoje.getFullYear()}`;
     let strMes  = `${String(hoje.getMonth()+1).padStart(2,"0")}-${hoje.getFullYear()}`;
-
     let totalHoje = 0, totalSemana = 0, totalMes = 0;
 
-    for (let chave in tempoPorDiaMateria) {
-        if (chave.endsWith(strHoje)) totalHoje += tempoPorDiaMateria[chave];
-    }
-    for (let chave in tempoPorMes) {
-        if (chave.endsWith(strMes)) totalMes += tempoPorMes[chave];
-    }
+    for (let chave in tempoPorDiaMateria) if (chave.endsWith(strHoje)) totalHoje += tempoPorDiaMateria[chave];
+    for (let chave in tempoPorMes) if (chave.endsWith(strMes)) totalMes += tempoPorMes[chave];
 
-    let diaDaSemana = hoje.getDay();
-    let diff = hoje.getDate() - diaDaSemana + (diaDaSemana === 0 ? -6 : 1);
-    let segunda = new Date(new Date().setDate(diff));
-
+    let diaDaSemana = hoje.getDay(), diff = hoje.getDate() - diaDaSemana + (diaDaSemana === 0 ? -6 : 1), segunda = new Date(new Date().setDate(diff));
     for (let i = 0; i < 7; i++) {
         let dAtual = new Date(segunda); dAtual.setDate(segunda.getDate() + i);
-        // CORREÇÃO FIREBASE: Uso de traço em vez de barra
         let chaveData = `${String(dAtual.getDate()).padStart(2,"0")}-${String(dAtual.getMonth()+1).padStart(2,"0")}-${dAtual.getFullYear()}`;
-        for (let chave in tempoPorDiaMateria) {
-            if (chave.endsWith(chaveData)) totalSemana += tempoPorDiaMateria[chave];
-        }
+        for (let chave in tempoPorDiaMateria) if (chave.endsWith(chaveData)) totalSemana += tempoPorDiaMateria[chave];
     }
 
     painel.innerHTML = `
@@ -160,11 +183,9 @@ function carregarBotoesRapidos() {
         btn.textContent = nome;
         btn.style.cssText = "padding:8px 15px;cursor:pointer;border-radius:5px;border:1px solid #ccc;background-color:#f8f9fa;font-weight:bold;";
         
-        // --- NOVIDADE: O Balão de Informações (Tooltip) ---
-        let tempoTotal = formatarHoraAmigavel(tempoPorMateria[nome] || 0);
-        let recorde = formatarHoraAmigavel(recordePorMateria[nome] || 0);
-        btn.title = `📊 Total Estudado: ${tempoTotal}\n🏆 Maior Sessão: ${recorde}`;
-        // --------------------------------------------------
+        let tTotal = formatarHoraAmigavel(tempoPorMateria[nome] || 0);
+        let tRec = formatarHoraAmigavel(recordePorMateria[nome] || 0);
+        btn.title = `📊 Total: ${tTotal}\n🏆 Maior Sessão: ${tRec}`;
 
         btn.addEventListener("click", () => { materia.value = nome; });
         btn.addEventListener("contextmenu", async (e) => {
@@ -185,11 +206,10 @@ function atualizarPlacarMensal() {
 
     for (let nome in tempoPorMateria) {
         let meta = metaPorMateria[nome] || 25, recordeStr = formatarHoraAmigavel(recordePorMateria[nome] || 0);
-        let htmlCard = `
-            <li style="background:white;border:1px solid #e1e8ed;border-radius:8px;padding:15px;list-style:none;">
-                <strong style="color:#2c3e50;font-size:1.2em;">${nome}</strong><br>
-                <span style="font-size:0.9em;color:#7f8c8d;">🏆 Recorde: <b>${recordeStr}</b> | 🎯 Meta atual: <b>${meta}min</b></span><br>
-                <div style="margin-top:12px;font-size:0.9em;color:#444;background:#f8f9fa;padding:10px;border-radius:5px;border-left:3px solid #3498db;">`;
+        let htmlCard = `<li style="background:white;border:1px solid #e1e8ed;border-radius:8px;padding:15px;list-style:none;">
+            <strong style="color:#2c3e50;font-size:1.2em;">${nome}</strong><br>
+            <span style="font-size:0.9em;color:#7f8c8d;">🏆 Recorde: <b>${recordeStr}</b> | 🎯 Meta atual: <b>${meta}min</b></span><br>
+            <div style="margin-top:12px;font-size:0.9em;color:#444;background:#f8f9fa;padding:10px;border-radius:5px;border-left:3px solid #3498db;">`;
 
         let temHistorico = false;
         for (let chave in tempoPorMes) {
@@ -198,7 +218,7 @@ function atualizarPlacarMensal() {
                 temHistorico = true;
             }
         }
-        if (!temHistorico) htmlCard += `<i>Sem histórico ainda.</i>`;
+        if (!temHistorico) htmlCard += `<i>Sem histórico.</i>`;
         painel.innerHTML += htmlCard + `</div></li>`;
     }
 }
@@ -235,7 +255,6 @@ function atualizarGraficos() {
             let dadosDaMateria = [];
             for (let i = 0; i < 7; i++) {
                 let dAtual = new Date(segunda); dAtual.setDate(segunda.getDate() + i);
-                // CORREÇÃO FIREBASE: Uso de traço em vez de barra
                 let dataStr = `${String(dAtual.getDate()).padStart(2,"0")}-${String(dAtual.getMonth()+1).padStart(2,"0")}-${dAtual.getFullYear()}`;
                 dadosDaMateria.push(((tempoPorDiaMateria[`${mat} - ${dataStr}`] || 0) / 3600).toFixed(4));
             }
@@ -247,11 +266,14 @@ function atualizarGraficos() {
 }
 
 /* ==========================================================
-   7. SALVAR NA NUVEM E LOCAL
+   7. SALVAR NA NUVEM E LOCAL (Com Rota Dinâmica)
    ========================================================== */
 async function salvarDadosNaNuvem() {
+    if (!caminhoNuvem) return; // Se não houver usuário logado, não salva
     const payload = { tempoPorMateria, recordePorMateria, metaPorMateria, tempoPorMes, tempoPorDiaMateria };
-    try { await set(ref(db, 'usuario_oscar/dadosOrfeu'), payload); } catch (erro) { console.error("Erro Firebase:", erro); }
+    try { await set(ref(db, caminhoNuvem), payload); } catch (erro) { console.error("Erro Firebase:", erro); }
+    
+    // O LocalStorage continua salvando offline no PC local
     localStorage.setItem("tempoPorMateria", JSON.stringify(tempoPorMateria));
     localStorage.setItem("recordePorMateria", JSON.stringify(recordePorMateria));
     localStorage.setItem("metaPorMateria", JSON.stringify(metaPorMateria));
@@ -263,7 +285,7 @@ async function salvarDadosNaNuvem() {
    8. EVENTOS DOS BOTÕES
    ========================================================== */
 btnPularDescanso.addEventListener("click", () => { clearInterval(intervaloId); intervaloId = null; modoAtual = "foco"; tempoAcumulado = 0; painelFoco.classList.remove("escondido"); painelDescanso.classList.add("escondido"); });
-btnIniciar.addEventListener("click", () => { if (materia.value.trim() === "") { alert("Digite ou selecione uma matéria primeiro!"); return; } if (intervaloId === null) { tempoInicio = Date.now() - tempoAcumulado; intervaloId = setInterval(incrementarTempo, 10); } materia.disabled = true; });
+btnIniciar.addEventListener("click", () => { if (materia.value.trim() === "") { alert("Selecione uma matéria!"); return; } if (intervaloId === null) { tempoInicio = Date.now() - tempoAcumulado; intervaloId = setInterval(incrementarTempo, 10); } materia.disabled = true; });
 btnPausar.addEventListener("click", () => { if (intervaloId !== null) { clearInterval(intervaloId); intervaloId = null; tempoAcumulado = Date.now() - tempoInicio; } });
 
 btnConcluir.addEventListener("click", async () => {
@@ -275,13 +297,8 @@ btnConcluir.addEventListener("click", async () => {
     let mAtual = metaPorMateria[nome] || 25;
     if (s >= mAtual * 60 && mAtual < limiteMaximo) { let excesso = s - (mAtual * 60), incremento = Math.round(excesso / 60) + 1; metaPorMateria[nome] = Math.min(limiteMaximo, mAtual + incremento); }
 
-    // CORREÇÃO FIREBASE: Substituindo Barras (/) por Traços (-)
-    let kDia = `${nome} - ${dia}-${mes}-${ano}`;
-    tempoPorDiaMateria[kDia] = (tempoPorDiaMateria[kDia] || 0) + s;
-
-    let kMes = `${nome} - ${mes}-${ano}`;
-    tempoPorMes[kMes] = (tempoPorMes[kMes] || 0) + s;
-
+    let kDia = `${nome} - ${dia}-${mes}-${ano}`; tempoPorDiaMateria[kDia] = (tempoPorDiaMateria[kDia] || 0) + s;
+    let kMes = `${nome} - ${mes}-${ano}`; tempoPorMes[kMes] = (tempoPorMes[kMes] || 0) + s;
     tempoPorMateria[nome] = (tempoPorMateria[nome] || 0) + s;
     if (s > (recordePorMateria[nome] || 0)) recordePorMateria[nome] = s;
 
@@ -305,7 +322,7 @@ if (btnExportar) { btnExportar.addEventListener("click", () => {
     for (let mat in tempoPorMateria) relatorio += `- ${mat}: ${formatarHoraAmigavel(tempoPorMateria[mat])}\n`;
     relatorio += "\n2. HISTÓRICO MENSAL\n-----------------------------------------\n";
     for (let chave in tempoPorMes) relatorio += `- ${chave}: ${formatarHoraAmigavel(tempoPorMes[chave])}\n`;
-    relatorio += "\n3. DIÁRIO DE BORDO (por dia e matéria)\n-----------------------------------------\n";
+    relatorio += "\n3. DIÁRIO DE BORDO\n-----------------------------------------\n";
     for (let chave in tempoPorDiaMateria) relatorio += `- ${chave}: ${formatarHoraAmigavel(tempoPorDiaMateria[chave])}\n`;
     relatorio += "\n=========================================\nFim do Relatório.";
     let blob = new Blob([relatorio], { type: "text/plain;charset=utf-8" }), link = document.createElement("a");
@@ -314,22 +331,28 @@ if (btnExportar) { btnExportar.addEventListener("click", () => {
 });}
 
 /* ==========================================================
-   10. INICIALIZAÇÃO
+   10. INICIALIZAÇÃO E DOWNLOAD DE DADOS
    ========================================================== */
 async function iniciarSistema() {
+    if (!caminhoNuvem) return; // Exige usuário logado
+
     try {
-        const resposta = await get(child(ref(db), 'usuario_oscar/dadosOrfeu'));
+        const resposta = await get(child(ref(db), caminhoNuvem));
         if (resposta.exists()) {
             let d = resposta.val();
             tempoPorMateria = d.tempoPorMateria || {}; recordePorMateria = d.recordePorMateria || {}; metaPorMateria = d.metaPorMateria || {}; tempoPorMes = d.tempoPorMes || {}; tempoPorDiaMateria = d.tempoPorDiaMateria || {};
         } else {
+            // Conta nova! Sincroniza o que já estava no seu PC para a nuvem
             let dMat = localStorage.getItem("tempoPorMateria");
-            if (dMat) { tempoPorMateria = JSON.parse(dMat); recordePorMateria = JSON.parse(localStorage.getItem("recordePorMateria") || "{}"); metaPorMateria = JSON.parse(localStorage.getItem("metaPorMateria") || "{}"); tempoPorMes = JSON.parse(localStorage.getItem("tempoPorMes") || "{}"); tempoPorDiaMateria = JSON.parse(localStorage.getItem("tempoPorDiaMateria") || "{}"); await salvarDadosNaNuvem(); }
+            if (dMat) { 
+                tempoPorMateria = JSON.parse(dMat); recordePorMateria = JSON.parse(localStorage.getItem("recordePorMateria") || "{}"); metaPorMateria = JSON.parse(localStorage.getItem("metaPorMateria") || "{}"); tempoPorMes = JSON.parse(localStorage.getItem("tempoPorMes") || "{}"); tempoPorDiaMateria = JSON.parse(localStorage.getItem("tempoPorDiaMateria") || "{}"); 
+                await salvarDadosNaNuvem(); 
+            }
         }
     } catch (erro) {
-        console.warn("Offline. Usando dados locais."); let dMat = localStorage.getItem("tempoPorMateria");
+        console.warn("Offline. Usando dados locais.", erro); 
+        let dMat = localStorage.getItem("tempoPorMateria");
         if (dMat) { tempoPorMateria = JSON.parse(dMat); recordePorMateria = JSON.parse(localStorage.getItem("recordePorMateria") || "{}"); metaPorMateria = JSON.parse(localStorage.getItem("metaPorMateria") || "{}"); tempoPorMes = JSON.parse(localStorage.getItem("tempoPorMes") || "{}"); tempoPorDiaMateria = JSON.parse(localStorage.getItem("tempoPorDiaMateria") || "{}"); }
     }
     carregarBotoesRapidos(); atualizarPlacarMensal(); atualizarResumoRapido(); atualizarGraficos();
 }
-iniciarSistema();
