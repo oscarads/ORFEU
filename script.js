@@ -127,10 +127,22 @@ function incrementarTempo() {
     let segundosTotais = Math.floor(diferencaMs / 1000);
     let nome = materia.value.toUpperCase(), metaAtual = metaPorMateria[nome] || 25;
 
-    if (segundosTotais >= metaAtual * 60 && segundosTotais - ultimoAviso >= 600) {
-        somAlarme.play(); document.title = "⚠️ META ATINGIDA!";
+   if (segundosTotais >= metaAtual * 60 && segundosTotais - ultimoAviso >= 600) {
+        somAlarme.play(); 
+        document.title = "⚠️ META ATINGIDA!";
+        ultimoAviso = segundosTotais;
+
+        // Dispara a Notificação de Sistema e faz o celular vibrar
+        if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("⚠️ ORFEU: Meta Atingida!", {
+                body: "Hora de focar na recuperação. Seu cérebro precisa de descanso."
+            });
+            // Padrão de vibração do Android: vibra 500ms, pausa 200ms, vibra 500ms
+            if (navigator.vibrate) navigator.vibrate([500, 200, 500]);
+        }
+
         let resposta = confirm("Meta atingida! Clique em OK para descansar ou Cancelar para continuar.");
-        somAlarme.pause(); somAlarme.currentTime = 0; document.title = "ORFEU"; ultimoAviso = segundosTotais;
+        somAlarme.pause(); somAlarme.currentTime = 0; document.title = "ORFEU"; 
         if (resposta) btnConcluir.click();
     }
     visor.textContent = `${String(horas).padStart(2,"0")}:${String(minutos).padStart(2,"0")}:${String(segundos).padStart(2,"0")}:${String(milissegundos).padStart(2,"0")}`;
