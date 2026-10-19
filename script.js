@@ -67,7 +67,29 @@ btnLogin.addEventListener("click", () => {
 });
 
 btnSair.addEventListener("click", () => {
-    if(confirm("Tem certeza que deseja sair?")) signOut(auth);
+    if (modoDemo) {
+        if (confirm("Sair do Modo Demo? Todo o seu teste será apagado e não foi salvo na nuvem.")) {
+            modoDemo = false;
+            btnSair.textContent = "Sair da Conta";
+            telaLogin.style.display = "flex";
+            appPrincipal.style.display = "none";
+            btnSair.style.display = "none";
+        }
+    } else {
+        if (confirm("Tem certeza que deseja sair da sua conta oficial?")) signOut(auth);
+    }
+});
+btnDemo.addEventListener("click", () => {
+    modoDemo = true;
+    caminhoNuvem = null; 
+    telaLogin.style.display = "none";
+    appPrincipal.style.display = "block";
+    btnSair.style.display = "block";
+    btnSair.textContent = "Sair do Modo Demo";
+    
+    // Zera qualquer dado residual
+    tempoPorMateria = {}; recordePorMateria = {}; metaPorMateria = {}; tempoPorMes = {}; tempoPorDiaMateria = {};
+    carregarBotoesRapidos(); atualizarPlacarMensal(); atualizarResumoRapido(); atualizarGraficos();
 });
 
 // Fica vigiando para ver se o usuário está logado ou não
@@ -129,7 +151,7 @@ function incrementarTempo() {
     let segundosTotais = Math.floor(diferencaMs / 1000);
     let nome = materia.value.toUpperCase(), metaAtual = metaPorMateria[nome] || 25;
 
-   if (segundosTotais >= metaAtual * 60 && segundosTotais - ultimoAviso >= 600) {
+    if (segundosTotais >= metaAtual * 60 && segundosTotais - ultimoAviso >= 600) {
         somAlarme.play(); 
         document.title = "⚠️ META ATINGIDA!";
         ultimoAviso = segundosTotais;
@@ -197,9 +219,10 @@ function carregarBotoesRapidos() {
         btn.textContent = nome;
         btn.style.cssText = "padding:8px 15px;cursor:pointer;border-radius:5px;border:1px solid #ccc;background-color:#f8f9fa;font-weight:bold;";
         
-        let tTotal = formatarHoraAmigavel(tempoPorMateria[nome] || 0);
+       let tTotal = formatarHoraAmigavel(tempoPorMateria[nome] || 0);
         let tRec = formatarHoraAmigavel(recordePorMateria[nome] || 0);
-        btn.title = `📊 Total: ${tTotal}\n🏆 Maior Sessão: ${tRec}`;
+        // Atualize esta linha abaixo:
+        btn.title = `📊 Total: ${tTotal}\n🏆 Maior Sessão: ${tRec}\n⚠️ Botão direito (ou segurar) para apagar`;
 
         btn.addEventListener("click", () => { materia.value = nome; });
         btn.addEventListener("contextmenu", async (e) => {
@@ -283,11 +306,13 @@ function atualizarGraficos() {
    7. SALVAR NA NUVEM E LOCAL (Com Rota Dinâmica)
    ========================================================== */
 async function salvarDadosNaNuvem() {
-    if (!caminhoNuvem) return; // Se não houver usuário logado, não salva
+    // A trava de segurança do Modo Demo
+    if (modoDemo) return; 
+    
+    if (!caminhoNuvem) return; 
     const payload = { tempoPorMateria, recordePorMateria, metaPorMateria, tempoPorMes, tempoPorDiaMateria };
     try { await set(ref(db, caminhoNuvem), payload); } catch (erro) { console.error("Erro Firebase:", erro); }
     
-    // O LocalStorage continua salvando offline no PC local
     localStorage.setItem("tempoPorMateria", JSON.stringify(tempoPorMateria));
     localStorage.setItem("recordePorMateria", JSON.stringify(recordePorMateria));
     localStorage.setItem("metaPorMateria", JSON.stringify(metaPorMateria));
@@ -348,7 +373,7 @@ if (btnExportar) { btnExportar.addEventListener("click", () => {
    10. INICIALIZAÇÃO E DOWNLOAD DE DADOS
    ========================================================== */
 async function iniciarSistema() {
-   async function iniciarSistema() {
+    async function iniciarSistema() {
     // Pede permissão para mandar notificações no sistema (Celular e PC)
     if ("Notification" in window && Notification.permission === "default") {
         Notification.requestPermission();
