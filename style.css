@@ -129,8 +129,12 @@ body {
 
 /* 12. RESPONSIVO MOBILE */
 @media (max-width: 600px) {
-    #visor { font-size: 3.5rem; }
+    #visor, #visor-descanso { 
+        font-size: 3rem !important; 
+        word-wrap: break-word; 
+    }
     .header h1 { font-size: 3em; }
     .btn-acao { padding: 12px 16px; font-size: 14px; }
     .area-botoes-acao { flex-wrap: wrap; }
+    .card { padding: 15px; }
 }
