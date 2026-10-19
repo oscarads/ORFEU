@@ -334,6 +334,15 @@ if (btnExportar) { btnExportar.addEventListener("click", () => {
    10. INICIALIZAÇÃO E DOWNLOAD DE DADOS
    ========================================================== */
 async function iniciarSistema() {
+   async function iniciarSistema() {
+    // Pede permissão para mandar notificações no sistema (Celular e PC)
+    if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+    }
+    
+    if (!caminhoNuvem) return; 
+    // ... resto do código da função que já está lá ...
+}
     if (!caminhoNuvem) return; // Exige usuário logado
 
     try {
