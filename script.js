@@ -56,6 +56,8 @@ const painelDescanso = document.getElementById("painel-descanso");
 const visorDescanso  = document.getElementById("visor-descanso");
 const btnPularDescanso = document.getElementById("btnPularDescanso");
 const painelFoco     = document.getElementById("painel-foco");
+const btnDemo = document.getElementById("btn-demo");
+let modoDemo = false; // Variável que trava o salvamento
 
 /* ==========================================================
    3. SISTEMA DE LOGIN (Google Auth)
